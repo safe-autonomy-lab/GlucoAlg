@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "glucoalg"
+version = "0.1.0"
+description = "GlucoAlg: A benchmark algorithms for diabetes RL, dynamics prediction, and evaluation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [{name = "Minjae Kwon"}]
+dependencies = [
+  "einops",
+  "gdown",
+  "gymnasium[other]",
+  "gymnasium[mujoco]",
+  "pytorch-lightning",
+  "pyyaml",
+  "rich",
+  "stable-baselines3",
+  "tensorboard",
+  "tqdm",
+  "wandb",
+]
