@@ -5,6 +5,7 @@ python -m pip install -e .
 ```
 
 Important: Before running any scripts in this repository, you must install `glucosim` (environment dependency).
+glucosim: https://github.com/safe-autonomy-lab/GlucoSim
 
 # Dependency to Omnisafe and FunctionEncoder
 We do not have to install the other repositories, but include necessary sources code from other repositories.
