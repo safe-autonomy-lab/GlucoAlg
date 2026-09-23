@@ -69,12 +69,14 @@ class OnCRPO(TRPO):
         Jc = self._logger.get_stats('Metrics/EpCost')[0]
         if Jc <= self._cfgs.algo_cfgs.cost_limit + self._cfgs.algo_cfgs.distance:
             self._rew_update += 1
-            return adv_r
-        self._cost_update += 1
+            advantage = adv_r
+        else:
+            self._cost_update += 1
+            advantage = -adv_c
         self._logger.store(
             {
                 'Misc/RewUpdate': self._rew_update,
                 'Misc/CostUpdate': self._cost_update,
             },
         )
-        return -adv_c
+        return advantage

@@ -80,9 +80,6 @@ class PCPO(CPO):
         x = conjugate_gradients(self._fvp, grads, self._cfgs.algo_cfgs.cg_iters)
         assert torch.isfinite(x).all(), 'x is not finite'
         xHx = x.dot(self._fvp(x))
-        H_inv_g = self._fvp(x)
-        assert xHx.item() >= 0, 'xHx is negative'
-        alpha = torch.sqrt(2 * self._cfgs.algo_cfgs.target_kl / (xHx + 1e-8))
 
         self._actor_critic.zero_grad()
         loss_cost = self._loss_pi_cost(obs, act, logp, adv_c, original_obs=original_obs)
@@ -102,14 +99,27 @@ class PCPO(CPO):
         r = grads.dot(p)
         s = b_grads.dot(p)
 
-        step_direction = (
-            torch.sqrt(2 * self._cfgs.algo_cfgs.target_kl / (q + 1e-8)) * H_inv_g
-            - torch.clamp_min(
-                (torch.sqrt(2 * self._cfgs.algo_cfgs.target_kl / q) * r + ep_costs) / s,
-                torch.tensor(0.0, device=self._device),
-            )
-            * p
-        )  # pylint: disable=invalid-name
+        if not torch.isfinite(torch.stack((q, r, s, q.new_tensor(ep_costs)))).all() or q < 0 or s < 0:
+            raise ValueError('PCPO requires finite cost violation and nonnegative Fisher curvature')
+
+        # First maximize the linearized reward within the Fisher trust region.
+        # A zero reward gradient has no preferred improvement direction.
+        eps = 1e-8
+        alpha = torch.sqrt(2 * self._cfgs.algo_cfgs.target_kl / q) if q > eps else q.new_zeros(())
+        step_direction = alpha * x
+
+        # Project onto b.T @ step + c <= 0 in the Fisher metric. A flat cost
+        # surrogate cannot repair an already violated constraint; keep the actor
+        # unchanged in that case instead of dividing by zero or inventing a step.
+        violation = b_grads.dot(step_direction) + ep_costs
+        if s > eps:
+            step_direction = step_direction - torch.clamp_min(violation / s, 0.0) * p
+        elif violation > 0:
+            self._logger.log('WARNING: no usable cost gradient for PCPO recovery')
+            step_direction = torch.zeros_like(x)
+
+        if not torch.isfinite(step_direction).all():
+            raise ValueError('PCPO projection produced a nonfinite step')
 
         step_direction, accept_step = self._cpo_search_step(
             step_direction=step_direction,

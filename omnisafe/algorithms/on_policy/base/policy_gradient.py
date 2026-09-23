@@ -432,11 +432,11 @@ class PolicyGradient(BaseAlgo):
 
             new_distribution = self._actor_critic.actor(obs_before_update, original_obs=original_obs_before_update)
 
-            kl = (
-                torch.distributions.kl.kl_divergence(old_distribution, new_distribution)
-                .sum(-1, keepdim=True)
-                .mean()
-            )
+            kl_raw = torch.distributions.kl.kl_divergence(old_distribution, new_distribution)
+            if kl_raw.dim() > 1:
+                kl = kl_raw.sum(-1, keepdim=True).mean()
+            else:
+                kl = kl_raw.mean()
             kl = distributed.dist_avg(kl)
 
             final_kl = kl.item()
@@ -632,6 +632,7 @@ class PolicyGradient(BaseAlgo):
         self._logger.store(
             {
                 'Train/Entropy': entropy,
+                'Train/PolicyStd': std,
                 'Train/PolicyRatio': ratio,
                 'Loss/Loss_pi': loss.mean().item(),
             },
