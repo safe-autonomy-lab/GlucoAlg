@@ -23,7 +23,7 @@ import torch.nn.functional as F
 from gymnasium.envs.classic_control.pendulum import PendulumEnv, angle_normalize
 from gymnasium.envs.mujoco.inverted_pendulum_v4 import InvertedPendulumEnv
 from gymnasium.utils.ezpickle import EzPickle
-from glucobench.safety_gymnasium.utils.registration import register
+from glucosim.safety_gymnasium.utils.registration import register
 
 
 

@@ -19,7 +19,7 @@ from __future__ import annotations
 from typing import Any, ClassVar
 
 import numpy as np
-import glucobench.safety_gymnasium
+import glucosim.safety_gymnasium
 import torch
 
 from omnisafe.envs.classic_control.envs_from_crabs import SafeEnv

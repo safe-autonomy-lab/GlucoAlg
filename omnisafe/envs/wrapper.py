@@ -613,6 +613,23 @@ class Unsqueeze(Wrapper):
         
         # Check if action space is discrete
         self._is_discrete_action = isinstance(self.action_space, (spaces.Discrete, spaces.MultiDiscrete))
+        # Whether the wrapped env already uses vectorized (1, dim) values. Detected
+        # from the reset observation; vectorized inner envs also expect batched actions.
+        self._inner_is_vectorized = False
+
+    @staticmethod
+    def _ensure_batched(value: torch.Tensor, trailing: tuple[int, ...]) -> torch.Tensor:
+        """Add the leading single-env batch dim only when it is missing.
+
+        Classic single-env CMDPs return unbatched values (e.g. ``(obs_dim,)``),
+        while vectorized ones already return ``(1, obs_dim)``. Unsqueezing the
+        latter again would silently double-batch downstream training batches.
+        """
+        if tuple(value.shape) == (1, *trailing):
+            return value
+        if tuple(value.shape) == trailing:
+            return value.unsqueeze(0)
+        return value
 
     def step(
         self,
@@ -642,21 +659,29 @@ class Unsqueeze(Wrapper):
             truncated: Whether the episode has been truncated due to a time limit.
             info: Some information logged by the environment.
         """
-        # Handle both continuous and discrete actions
-        if self._is_discrete_action:
+        # Handle both continuous and discrete actions. Classic inner envs expect an
+        # unbatched action, but already-vectorized ones expect the (1, dim) action.
+        if self._inner_is_vectorized:
+            action = action.long() if self._is_discrete_action else action
+        elif self._is_discrete_action:
             # For discrete actions, ensure we maintain integer types
             action = action.squeeze(0).long()
         else:
             # For continuous actions, use float
             action = action.squeeze(0)
-            
+
         obs, reward, cost, terminated, truncated, info = super().step(action)
-        obs, reward, cost, terminated, truncated = (
-            x.unsqueeze(0) for x in (obs, reward, cost, terminated, truncated)
-        )
+        obs_dim = self.observation_space.shape
+        self._inner_is_vectorized = tuple(obs.shape) == (1, *obs_dim)
+        obs = self._ensure_batched(obs, obs_dim)
+        reward = self._ensure_batched(reward, ())
+        cost = self._ensure_batched(cost, ())
+        terminated = self._ensure_batched(terminated, ())
+        truncated = self._ensure_batched(truncated, ())
         for k, v in info.items():
             if isinstance(v, torch.Tensor):
-                info[k] = v.unsqueeze(0)
+                trailing = obs_dim if v.shape == obs_dim else () if v.shape == (1,) else v.shape[1:]
+                info[k] = v if tuple(v.shape) == (1, *trailing) else v.unsqueeze(0)
 
         return obs, reward, cost, terminated, truncated, info
 
@@ -679,9 +704,12 @@ class Unsqueeze(Wrapper):
             info: Some information logged by the environment.
         """
         obs, info = super().reset(seed=seed, options=options)
-        obs = obs.unsqueeze(0)
+        obs_dim = self.observation_space.shape
+        self._inner_is_vectorized = tuple(obs.shape) == (1, *obs_dim)
+        obs = self._ensure_batched(obs, obs_dim)
         for k, v in info.items():
             if isinstance(v, torch.Tensor):
-                info[k] = v.unsqueeze(0)
+                trailing = obs_dim if v.shape == obs_dim else () if v.shape == (1,) else v.shape[1:]
+                info[k] = v if tuple(v.shape) == (1, *trailing) else v.unsqueeze(0)
 
         return obs, info

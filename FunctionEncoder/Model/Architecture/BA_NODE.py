@@ -2,7 +2,6 @@ import math
 from typing import Union, Tuple, Optional
 
 import torch
-from torch.func import stack_module_state, functional_call, vmap
 # Assuming these imports are in your project structure
 from FunctionEncoder.Model.Architecture.BaseArchitecture import BaseArchitecture
 from FunctionEncoder.Model.Architecture.Util import get_encoder
@@ -112,8 +111,6 @@ class BA_NODE(BaseArchitecture):
             for _ in range(n_basis)
         ])
 
-        self._dyn_params, self._dyn_buffers = stack_module_state(self.dynamics_models)
-        
         self.project_basis_functions = torch.nn.Linear(n_basis, 1)
         # Decoder maps from the internal ODE state size back to the desired output_size (per step)
         # If prediction_length > 1, output_size is flattened (P*D,). We need D.
@@ -134,31 +131,14 @@ class BA_NODE(BaseArchitecture):
             learn_basis_functions=False
         )
 
-    def _single_model_rk4(self, params, buffers, h):
-        # This function runs ONE model, but we will vmap it later
-        
-        # Define the function f(y) for this specific set of params
-        def f(y):
-            # functional_call(module, (params, buffers), args)
-            return functional_call(self.dynamics_models[0], (params, buffers), (y,))
-            
-        # Solve RK4 for this single model
-        # (Assumes rk4_difference_only is available in scope)
-        return rk4_difference_only(f, h, self.dt)
-
     def _ensemble_delta(self, h):
-        # h: (..., S)
-        # vmap over models (params/buffers dim 0), share h
-        params, buffers = stack_module_state(self.dynamics_models)
-        delta_h = vmap(
-            self._single_model_rk4,
-            in_dims=(0, 0, None),
-        )(params, buffers, h)
-        # delta_h: (K, ..., S)
-        delta_h = delta_h.movedim(0, -1)  # (..., S, K) to match your code
-        return delta_h
+        # Direct module calls keep gradients connected to the parameters held
+        # by the optimizer. stack_module_state creates unrelated leaf tensors.
+        return torch.stack([
+            rk4_difference_only(model, h, self.dt)
+            for model in self.dynamics_models
+        ], dim=-1)
 
-    @torch.compile(mode="reduce-overhead")
     def _rollout(self, h: torch.Tensor, prediction_horizon: int):
         """
         h: (..., S)   initial latent state from encoder

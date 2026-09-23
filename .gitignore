@@ -191,3 +191,7 @@ __pycache__/
 *.pyd
 *.py,cached
 *.png
+
+# Reproducible workflow outputs belong outside source control.
+/studies/
+/evaluations/

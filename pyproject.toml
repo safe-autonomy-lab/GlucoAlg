@@ -4,13 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "glucoalg"
-version = "0.1.0"
-description = "GlucoAlg: A benchmark algorithms for diabetes RL, dynamics prediction, and evaluation"
+version = "0.2.0"
+description = "Safe RL training, categorical hyperparameter search, and evaluation for GlucoSim"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Proprietary" }
 authors = [{name = "Minjae Kwon"}]
 dependencies = [
+  "numpy>=1.26",
+  "torch>=2.0",
+  "pandas>=2.0",
+  "matplotlib>=3.8",
+  "seaborn",
   "einops",
   "gdown",
   "gymnasium[other]",
@@ -23,3 +28,31 @@ dependencies = [
   "tqdm",
   "wandb",
 ]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+glucoalg-train = "glucoalg.train:main"
+glucoalg-eval = "glucoalg.eval_grid:legacy_main"
+glucoalg-eval-grid = "glucoalg.eval_grid:main"
+glucoalg-tune = "glucoalg.tuning.__main__:main"
+glucoalg-dynamics = "glucoalg.dynamics.__main__:main"
+
+[project.urls]
+Repository = "https://github.com/safe-autonomy-lab/GlucoAlg"
+Simulator = "https://github.com/safe-autonomy-lab/GlucoSim"
+
+[tool.setuptools]
+py-modules = ["run", "eval_run", "dynamics_trainers", "dynamics_utils", "plot_utils"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["glucoalg*", "glucobench*", "omnisafe*", "FunctionEncoder*", "shield*"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+omnisafe = ["configs/**/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

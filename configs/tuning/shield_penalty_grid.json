@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "study_name": "cpo-forecast-penalty",
+  "checkpoint": "/absolute/policy/epoch-976.pt",
+  "config": "/absolute/policy/config.json",
+  "simulator_root": "/absolute/GlucoSim",
+  "models": [
+    {
+      "seed": 3101,
+      "artifact_dir": "/absolute/predictors/direct-seed3101"
+    },
+    {
+      "seed": 3102,
+      "artifact_dir": "/absolute/predictors/direct-seed3102"
+    },
+    {
+      "seed": 3103,
+      "artifact_dir": "/absolute/predictors/direct-seed3103"
+    }
+  ],
+  "zero_model_seed": 3101,
+  "cases": [
+    {
+      "id": "validation-p001-s85000",
+      "patient_type": "t1d",
+      "patient_name": "adolescent#001",
+      "env_seed": 85000,
+      "action_seed": 85000,
+      "exploration_seed": 185000
+    },
+    {
+      "id": "validation-p001-s85001",
+      "patient_type": "t1d",
+      "patient_name": "adolescent#001",
+      "env_seed": 85001,
+      "action_seed": 85001,
+      "exploration_seed": 185001
+    },
+    {
+      "id": "validation-p001-s85002",
+      "patient_type": "t1d",
+      "patient_name": "adolescent#001",
+      "env_seed": 85002,
+      "action_seed": 85002,
+      "exploration_seed": 185002
+    }
+  ],
+  "action_modes": [
+    "stochastic",
+    "deterministic"
+  ],
+  "scales": [
+    0,
+    0.1,
+    0.5,
+    1,
+    1.5,
+    2
+  ],
+  "horizon_days": 1,
+  "exploration_probability": 0,
+  "protocol_files": [
+    "/absolute/experiment/protocol.md"
+  ]
+}
