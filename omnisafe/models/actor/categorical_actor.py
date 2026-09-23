@@ -14,7 +14,6 @@ from omnisafe.models.base import Actor
 from omnisafe.typing import Activation, InitFunction, OmnisafeSpace
 from omnisafe.utils.model import build_mlp_network
 from omnisafe.utils.distributions import MultiCategoricalDistribution, CategoricalDistribution
-from shield.predictive_shield import Shield
 
 
 class CategoricalActor(Actor):
@@ -52,16 +51,14 @@ class CategoricalActor(Actor):
         self._hidden_sizes: List[int] = hidden_sizes
         self._after_inference: bool = False
         self._shield_type = shield_type
-        if self._shield_type not in ['child', 'adult', 'adolescent', 'none']:
-            raise ValueError("Invalid shield type. Must be one of: child, adult, adolescent, none")
-
         if self._shield_type != 'none':
-            self.shield = Shield(shield_type=self._shield_type)
-        
-        else:
-            print("No shield is used")
-            self.shield = None
-        
+            raise ValueError(
+                "Training-time shielding is not supported by CategoricalActor; "
+                "use shield_type='none' for training and glucoalg-dynamics rollout "
+                "with an explicit predictor artifact for predictive evaluation."
+            )
+        self.shield = None
+
         # Handle observation space
         if isinstance(self._obs_space, spaces.Box) and len(self._obs_space.shape) == 1:
             self._obs_dim: int = self._obs_space.shape[0]

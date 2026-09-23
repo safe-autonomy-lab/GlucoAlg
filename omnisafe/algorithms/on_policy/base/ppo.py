@@ -86,6 +86,7 @@ class PPO(PolicyGradient):
             self._logger.store(
                 {
                     'Train/Entropy': entropy,
+                    'Train/PolicyStd': std,
                     'Train/PolicyRatio': ratio,
                     'Loss/Loss_pi': loss.mean().item(),
                 },

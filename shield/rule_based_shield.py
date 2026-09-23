@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
+from numbers import Real
 from typing import List, Optional
 
 import torch
@@ -27,6 +29,10 @@ class RuleBasedShield:
     def __init__(self, config: Optional[RuleBasedShieldConfig] = None, logit_penalty: float = 10.0):
         if config is None:
             config = RuleBasedShieldConfig(logit_penalty=logit_penalty)
+        for name in ("logit_penalty", "rescue_logit_penalty"):
+            value = getattr(config, name)
+            if isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(value) or value < 0:
+                raise ValueError(f"{name} must be a finite nonnegative magnitude")
         self.config = config
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 

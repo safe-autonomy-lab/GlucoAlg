@@ -1,0 +1,46 @@
+{
+  "study_name": "ppolag-lr-subset-demo",
+  "search": {
+    "mode": "random_subset",
+    "size": 3,
+    "seed": 7
+  },
+  "seeds": [
+    100,
+    101
+  ],
+  "cost_limit": 100.0,
+  "factors": {
+    "actor-lr": [
+      1e-05,
+      3e-05,
+      0.0001,
+      0.0003
+    ],
+    "entropy-coef": [
+      0.01,
+      0.001
+    ]
+  },
+  "train": {
+    "algo": "PPOLag",
+    "env-id": "t1d-v0",
+    "cohort": "adolescent",
+    "total-steps": 2000000,
+    "steps-per-epoch": 2048,
+    "vector-env-nums": 1,
+    "device": "cpu",
+    "critic-lr": 5e-05,
+    "lambda-lr": 0.035,
+    "lagrangian-multiplier-init": 0.001,
+    "batch-size": 64,
+    "target_kl": 0.1,
+    "safety-bonus": 1.0,
+    "penalty-type": "none",
+    "parallel": 1,
+    "cost_limit": 100.0,
+    "use-wandb": false,
+    "project-name": "[tuning] ppolag-lr-subset-demo"
+  },
+  "runner": "auto"
+}

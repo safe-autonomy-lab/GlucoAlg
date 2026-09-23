@@ -110,74 +110,77 @@ class CPO(TRPO):
         # reward improvement, g-flat as gradient of reward
         expected_reward_improve = grads.dot(step_direction)
 
-        kl = torch.zeros(1)
-        # while not within_trust_region and not finish all steps:
-        for step in range(total_steps):
-            # get new theta
-            new_theta = theta_old + step_frac * step_direction
-            # set new theta as new actor parameters
-            set_param_values_to_model(self._actor_critic.actor, new_theta)
-            # the last acceptance steps to next step
-            acceptance_step = step + 1
+        try:
+            kl = theta_old.new_zeros(())
+            # while not within_trust_region and not finish all steps:
+            for step in range(total_steps):
+                # get new theta
+                new_theta = theta_old + step_frac * step_direction
+                # set new theta as new actor parameters
+                set_param_values_to_model(self._actor_critic.actor, new_theta)
+                # the last acceptance steps to next step
+                acceptance_step = step + 1
 
-            with torch.no_grad():
-                try:
-                    # loss of policy reward from target/expected reward
-                    loss_reward = self._loss_pi(obs=obs, act=act, logp=logp, adv=adv_r, original_obs=original_obs)
-                except ValueError:
+                with torch.no_grad():
+                    try:
+                        # loss of policy reward from target/expected reward
+                        loss_reward = self._loss_pi(obs=obs, act=act, logp=logp, adv=adv_r, original_obs=original_obs)
+                    except ValueError:
+                        step_frac *= decay
+                        continue
+                    # loss of cost of policy cost from real/expected reward
+                    loss_cost = self._loss_pi_cost(obs=obs, act=act, logp=logp, adv_c=adv_c, original_obs=original_obs)
+                    # compute KL distance between new and old policy
+                    q_dist = self._actor_critic.actor(obs, original_obs=original_obs)
+                    kl = torch.distributions.kl.kl_divergence(p_dist, q_dist).mean()
+                # compute improvement of reward
+                loss_reward_improve = loss_reward_before - loss_reward
+                # compute difference of cost
+                loss_cost_diff = loss_cost - loss_cost_before
+
+                # average across MPI processes...
+                kl = distributed.dist_avg(kl)
+                # pi_average of torch_kl above
+                loss_reward_improve = distributed.dist_avg(loss_reward_improve)
+                loss_cost_diff = distributed.dist_avg(loss_cost_diff)
+                self._logger.log(
+                    f'Expected Improvement: {expected_reward_improve} Actual: {loss_reward_improve}',
+                )
+                # Invalid candidates must shrink just like other rejected steps.
+                if not torch.isfinite(torch.stack((kl, loss_reward_improve, loss_cost_diff))).all():
+                    self._logger.log('WARNING: nonfinite line-search candidate')
                     step_frac *= decay
                     continue
-                # loss of cost of policy cost from real/expected reward
-                loss_cost = self._loss_pi_cost(obs=obs, act=act, logp=logp, adv_c=adv_c, original_obs=original_obs)
-                # compute KL distance between new and old policy
-                q_dist = self._actor_critic.actor(obs, original_obs=original_obs)
-                kl = torch.distributions.kl.kl_divergence(p_dist, q_dist).mean()
-            # compute improvement of reward
-            loss_reward_improve = loss_reward_before - loss_reward
-            # compute difference of cost
-            loss_cost_diff = loss_cost - loss_cost_before
-
-            # average across MPI processes...
-            kl = distributed.dist_avg(kl)
-            # pi_average of torch_kl above
-            loss_reward_improve = distributed.dist_avg(loss_reward_improve)
-            loss_cost_diff = distributed.dist_avg(loss_cost_diff)
-            self._logger.log(
-                f'Expected Improvement: {expected_reward_improve} Actual: {loss_reward_improve}',
-            )
-            # check whether there are nan.
-            if not torch.isfinite(loss_reward) and not torch.isfinite(loss_cost):
-                self._logger.log('WARNING: loss_pi not finite')
-            if not torch.isfinite(kl):
-                self._logger.log('WARNING: KL not finite')
-                continue
-            if loss_reward_improve < 0 if optim_case > 1 else False:
-                self._logger.log('INFO: did not improve improve <0')
-            # change of cost's range
-            elif loss_cost_diff > max(-violation_c, 0):
-                self._logger.log(f'INFO: no improve {loss_cost_diff} > {max(-violation_c, 0)}')
-            # check KL-distance to avoid too far gap
-            elif kl > self._cfgs.algo_cfgs.target_kl:
-                self._logger.log(f'INFO: violated KL constraint {kl} at step {step + 1}.')
+                if loss_reward_improve < 0 if optim_case > 1 else False:
+                    self._logger.log('INFO: did not improve improve <0')
+                # change of cost's range
+                elif loss_cost_diff > max(-violation_c, 0):
+                    self._logger.log(f'INFO: no improve {loss_cost_diff} > {max(-violation_c, 0)}')
+                # check KL-distance to avoid too far gap
+                elif kl > self._cfgs.algo_cfgs.target_kl:
+                    self._logger.log(f'INFO: violated KL constraint {kl} at step {step + 1}.')
+                else:
+                    # step only if surrogate is improved and we are
+                    # within the trust region
+                    self._logger.log(f'Accept step at i={step + 1}')
+                    break
+                step_frac *= decay
             else:
-                # step only if surrogate is improved and we are
-                # within the trust region
-                self._logger.log(f'Accept step at i={step + 1}')
-                break
-            step_frac *= decay
-        else:
-            # if didn't find a step satisfy those conditions
-            self._logger.log('INFO: no suitable step found...')
-            step_direction = torch.zeros_like(step_direction)
-            acceptance_step = 0
+                # if didn't find a step satisfy those conditions
+                self._logger.log('INFO: no suitable step found...')
+                step_direction = torch.zeros_like(step_direction)
+                acceptance_step = 0
+                # No update was applied, so KL is zero, not the last rejected KL.
+                kl = theta_old.new_zeros(())
 
-        self._logger.store(
-            {
-                'Train/KL': kl,
-            },
-        )
+            self._logger.store(
+                {
+                    'Train/KL': kl,
+                },
+            )
 
-        set_param_values_to_model(self._actor_critic.actor, theta_old)
+        finally:
+            set_param_values_to_model(self._actor_critic.actor, theta_old)
         return step_frac * step_direction, acceptance_step
 
     def _loss_pi_cost(

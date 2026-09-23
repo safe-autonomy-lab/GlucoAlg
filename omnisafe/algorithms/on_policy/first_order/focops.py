@@ -125,11 +125,9 @@ class FOCOPS(PolicyGradient):
 
         # Compute KL divergence - handle both discrete and continuous
         kl = torch.distributions.kl_divergence(distribution, self._p_dist)
-        # Handle different output shapes
+        # Per-sample KL [N] to match ratio*adv [N]; Normal [N,A] sums event dim.
         if kl.dim() > 1:
-            kl = kl.sum(-1, keepdim=True)
-        elif kl.dim() == 1:
-            kl = kl.unsqueeze(-1)
+            kl = kl.sum(-1)
             
         loss = (kl - (1 / self._cfgs.algo_cfgs.focops_lam) * ratio * adv) * (
             kl.detach() <= self._cfgs.algo_cfgs.focops_eta
