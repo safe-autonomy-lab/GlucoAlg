@@ -30,6 +30,76 @@ actor learning rates `{3e-4, 3e-5}` × critic learning rates
 environment. The training CLI defaults to actor learning rate `1e-5`; the spec overrides it
 with the listed factors.
 
+## Tune other algorithms separately
+
+The same workflow supports TRPOLag, RCPO, OnCRPO (the CLI name for CRPO),
+PCPO, CUP and FOCOPS. Keep `algo` fixed within each study so configurations
+are ranked within an algorithm. Do not use algorithm names as a factor to
+select one winner across different algorithms.
+
+Run this portable Python recipe from the checkout root to derive separate
+specs from the PPOLag template. It writes under the Git-ignored `studies/`
+directory and refuses to overwrite existing specs:
+
+```python
+from copy import deepcopy
+import json
+from pathlib import Path
+
+template = json.loads(Path("configs/tuning/ppolag_actor_critic_grid.json").read_text())
+output = Path("studies/specs")
+output.mkdir(parents=True, exist_ok=True)
+natural_gradient = {"TRPOLag", "RCPO", "OnCRPO", "PCPO"}
+
+for algorithm in ("TRPOLag", "RCPO", "OnCRPO", "PCPO", "CUP", "FOCOPS"):
+    spec = deepcopy(template)
+    name = f"{algorithm.lower()}-grid"
+    spec["study_name"] = name
+    spec["seeds"] = [100, 101, 102]
+    spec["train"].update({"algo": algorithm, "project-name": f"[tuning] {name}"})
+    for key in ("actor-lr", "critic-lr", "target-kl", "target_kl"):
+        spec["train"].pop(key, None)
+    if algorithm in natural_gradient:
+        spec["train"]["actor-lr"] = 1e-5
+        spec["factors"] = {
+            "target-kl": [0.01, 0.1],
+            "critic-lr": [5e-5, 1e-4, 1e-3],
+        }
+    else:
+        spec["train"]["target-kl"] = 0.1
+        spec["factors"] = {
+            "actor-lr": [1e-5, 3e-4],
+            "critic-lr": [5e-5, 1e-4, 3e-4],
+        }
+    with (output / f"{name}.json").open("x", encoding="utf-8") as stream:
+        json.dump(spec, stream, indent=2)
+        stream.write("\n")
+```
+
+These levels are starting examples, not tuned or best-performing values.
+The natural-gradient methods use a fixed positive actor learning rate as a
+configuration placeholder; their grid varies target KL and critic learning
+rate. CUP and FOCOPS vary actor and critic learning rates. Algorithm-specific
+defaults still come from each algorithm's configuration; inspect the resolved
+configurations before training.
+
+Validate, plan and inspect each study with the same commands:
+
+```bash
+for algorithm in trpolag rcpo oncrpo pcpo cup focops; do
+  python -m glucoalg.tuning validate --spec "./studies/specs/${algorithm}-grid.json"
+  python -m glucoalg.tuning plan \
+    --spec "./studies/specs/${algorithm}-grid.json" \
+    --simulator-root /absolute/path/GlucoSim --output "./studies/${algorithm}-grid"
+  python -m glucoalg.tuning run --plan "./studies/${algorithm}-grid" --all --dry-run
+done
+```
+
+Each example has six configurations and three seeds. Execute and summarize
+each plan independently using the commands below, replacing the PPOLag plan
+path with the desired algorithm's plan. Generated specs, plans, logs and
+summaries stay under `studies/` and outside Git.
+
 ## Spec format
 
 ```json
@@ -125,7 +195,7 @@ python -m glucoalg.tuning export-slurm \
   --plan ./studies/ppolag-grid --out ./studies/ppolag-grid/tune.sbatch
 ```
 
-An optional shared-CPU example requests four CPUs, 8 GiB of memory, a 24-hour
+An optional shared-CPU example requests one Slurm CPU, 8 GiB of memory, a 24-hour
 limit and at most two concurrent tasks:
 
 ```bash
@@ -157,7 +227,7 @@ flags preserve it. For example:
 python -m glucoalg.tuning export-slurm \
   --plan ./studies/ppolag-grid --out ./studies/ppolag-grid/shared.sbatch \
   --profile configs/execution/slurm_cpu.json \
-  --time 08:00:00 --cpus-per-task 2 --memory 4G --max-concurrent 4
+  --time 08:00:00 --cpus-per-task 1 --memory 4G --max-concurrent 4
 ```
 
 `max_concurrent` limits simultaneous array tasks using Slurm's `%N` array
@@ -168,6 +238,17 @@ values. See the [Slurm options reference](https://slurm.schedmd.com/sbatch.html)
 for scheduler semantics. Profiles reject unknown/duplicate keys, invalid types,
 control characters and arbitrary directives. Names use letters, digits,
 underscores, dots and hyphens; only partition lists permit commas.
+
+The CPU example requests one Slurm CPU per task. The resource request alone
+does not enforce physical-core affinity or library thread counts; configure
+those separately for your site and workload. `max_concurrent` is a per-array limit,
+not a shared budget across studies. For a shared limit of 100 simultaneous CPU
+tasks, reserve capacity for other running or pending jobs and coordinator tasks,
+then keep the sum of the array throttles within the remaining capacity. Six
+arrays using the example profile can run at most 12 training tasks in total.
+The adapter does not enforce a global limit; check the scheduler before
+submission and when adding arrays. Profiles remain configurable for other
+resource requirements.
 
 Export embeds the effective resource settings, profile path, plan hash and
 exporting Python interpreter in a script comment. It does not alter the sealed
