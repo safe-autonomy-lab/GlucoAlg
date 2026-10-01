@@ -79,9 +79,13 @@ for algorithm in ("TRPOLag", "RCPO", "OnCRPO", "PCPO", "CUP", "FOCOPS"):
 These levels are starting examples, not tuned or best-performing values.
 The natural-gradient methods use a fixed positive actor learning rate as a
 configuration placeholder; their grid varies target KL and critic learning
-rate. CUP and FOCOPS vary actor and critic learning rates. Algorithm-specific
-defaults still come from each algorithm's configuration; inspect the resolved
-configurations before training.
+rate. Their actor updates apply manually computed steps scaled by target KL.
+`actor-lr` and `model_cfgs.linear_lr_decay` configure an unused actor optimizer
+in these methods, so exclude them from search factors and do not interpret
+`Train/LR` as the applied actor step size. Reward and cost critics still use
+`critic-lr`. CUP and FOCOPS vary actor and critic learning rates.
+Algorithm-specific defaults still come from each algorithm's configuration;
+inspect the resolved configurations before training.
 
 Validate, plan and inspect each study with the same commands:
 
