@@ -197,6 +197,41 @@ data, an explicit predictor artifact, and recorded policy/simulator provenance. 
 command. The implementation and its software checks do not establish predictive
 benefit, calibrated uncertainty, or improved safety.
 
+## Animate a trained policy
+
+Install the rendering dependencies with `python -m pip install -e '.[render]'`.
+Use an existing checkpoint and its matching training configuration:
+
+```bash
+glucoalg-demo \
+  --checkpoint /absolute/run/torch_save/epoch-976.pt \
+  --config /absolute/run/config.json \
+  --simulator-root "$GLUCOSIM_ROOT" \
+  --patient 'adolescent#002' --eval-seed 43 --days 1 \
+  --output-dir ./evaluations/student-demo
+```
+
+Or download a released policy directly from Hugging Face:
+
+```bash
+glucoalg-demo \
+  --hf-repo safe-diabetes-benchmark/safe-diabetes-t2d-adolescent-cpo \
+  --revision 557192c4db96edf90f3b9e239f4ae5ebdc7781df \
+  --training-seed 100 --simulator-root "$GLUCOSIM_ROOT" \
+  --patient 'adolescent#002' --eval-seed 43 --days 1 \
+  --output-dir ./evaluations/hf-demo
+```
+
+The command restores the actor and saved normalizer, samples actions, records
+controller CSVs, and creates `episode.gif`, a PNG, and a provenance receipt.
+It does not train a new policy or add a runtime shield. The new output
+directory requirement protects existing results. Use `--days 7` for a week.
+
+`glucoalg-render` re-renders a saved CSV without executing the policy again.
+See [the student checkpoint-animation guide](docs/checkpoint-animation.md)
+for fresh CPU installation, simulator-version matching, local/Hugging Face
+examples, Python calls, output files, and request/acceptance interpretation.
+
 ## Dynamics and development
 
 The causal dynamics workflow collects whole episodes and restored-state action

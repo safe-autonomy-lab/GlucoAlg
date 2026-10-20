@@ -31,6 +31,8 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=7"]
+# The documented HF simulator revision uses Gymnasium's pre-1.4 type variables.
+render = ["pillow>=10", "huggingface_hub>=0.26", "gymnasium>=1.3,<1.4"]
 
 [project.scripts]
 glucoalg-train = "glucoalg.train:main"
@@ -38,6 +40,8 @@ glucoalg-eval = "glucoalg.eval_grid:legacy_main"
 glucoalg-eval-grid = "glucoalg.eval_grid:main"
 glucoalg-tune = "glucoalg.tuning.__main__:main"
 glucoalg-dynamics = "glucoalg.dynamics.__main__:main"
+glucoalg-demo = "glucoalg.demo:main"
+glucoalg-render = "glucoalg.rendering:main"
 
 [project.urls]
 Repository = "https://github.com/safe-autonomy-lab/GlucoAlg"
