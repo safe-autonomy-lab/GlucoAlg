@@ -195,3 +195,6 @@ __pycache__/
 # Reproducible workflow outputs belong outside source control.
 /studies/
 /evaluations/
+
+# Published, frozen benchmark summaries (raw experiment outputs stay ignored).
+!/benchmark-results/2026-10-08/tables/*.csv

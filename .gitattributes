@@ -1,0 +1,2 @@
+# Preserve frozen CSV bytes and checksums across operating systems.
+/benchmark-results/2026-10-08/tables/*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

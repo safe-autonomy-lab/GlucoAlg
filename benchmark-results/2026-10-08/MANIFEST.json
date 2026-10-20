@@ -1,0 +1,41 @@
+{
+  "files": {
+    "DATA_DICTIONARY.md": {
+      "bytes": 4943,
+      "sha256": "26ab410e9ae6b873541bc1b01ba9d3bd0fc0defb957714fb68c2bf384b92e1cb"
+    },
+    "LICENSE": {
+      "bytes": 1093,
+      "sha256": "74deeef87603bfb21ba7a5c82b13bc86ae239b0e4f5a9b7dff6a78df077ec5cd"
+    },
+    "README.md": {
+      "bytes": 6210,
+      "sha256": "413b20524debac439982926dd36337b1e0fee07d57d23e750bf8473aeeff64e4"
+    },
+    "source-snapshot.json": {
+      "bytes": 1758,
+      "sha256": "dec18e66dcfc6c07253a99c768cec3d154e66dfcc8b7f3010649bc797c6f777a"
+    },
+    "tables/all-panels.csv": {
+      "bytes": 5394453,
+      "sha256": "844263c5eb42be3d377d1887bda55687b25d569afdd5a2f950ce2a1c7c2d731c"
+    },
+    "tables/comparison-tables.md": {
+      "bytes": 98199,
+      "sha256": "3d08b9e878131a86548629c16f8d54fc8dac8cdabf104758390798ec2e0ef5a0"
+    },
+    "tables/coverage-unseen7.csv": {
+      "bytes": 23239,
+      "sha256": "f31c900a4c79869da198b02df89b802566542c5833222ec184462ab194b0b47b"
+    },
+    "tables/historical-cpo-ppolag-unseen7.csv": {
+      "bytes": 179976,
+      "sha256": "dec6a87108e9e41c69026da40ed33b8b4f0395edd1893977445677510e1daefa"
+    },
+    "tables/matched-unseen7.csv": {
+      "bytes": 1297007,
+      "sha256": "b3d1ffefb3dc5464809c0e84e74e33003eb2c5c378d7a87e98264c12ae39780a"
+    }
+  },
+  "schema": "glucoalg.shared_summary_manifest/1"
+}

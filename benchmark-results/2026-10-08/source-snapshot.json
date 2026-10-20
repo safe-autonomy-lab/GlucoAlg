@@ -1,0 +1,62 @@
+{
+  "accepted_predictive_batches": 3240,
+  "algorithms": [
+    "CPO",
+    "PPOLag",
+    "TRPOLag",
+    "RCPO",
+    "OnCRPO",
+    "PCPO",
+    "CUP",
+    "FOCOPS"
+  ],
+  "dedicated_native_metric_supplement_exported": false,
+  "evaluation_reset_action_seeds": [
+    83000,
+    83001,
+    83002
+  ],
+  "expected_predictive_batches": 3240,
+  "final_campaign_complete": true,
+  "fixed10_all_eight_complete_panels": 144,
+  "license": "mit",
+  "metrics_recomputed_for_sharing": false,
+  "original_report_proof_sha256": "6fed9be42cc24d601072d9beb8a21eac0ac1854df635221c52ec9831851b4f32",
+  "original_summary_sha256": "7b2fafc0a752864226f457793404a37d1cf15a0bb7e35574817cfed00f42a775",
+  "policy_training_seeds": [
+    100,
+    101,
+    102
+  ],
+  "predictor_training_seeds": [
+    3101,
+    3102,
+    3103
+  ],
+  "schema": "glucoalg.public_evaluation_snapshot/1",
+  "selected_all_eight_no_eligible_penalty_panels": 36,
+  "selected_all_eight_numeric_panels": 108,
+  "six_algorithm_report_scope": {
+    "algorithms": [
+      "TRPOLag",
+      "RCPO",
+      "OnCRPO",
+      "PCPO",
+      "CUP",
+      "FOCOPS"
+    ],
+    "fields": [
+      "accepted_predictive_batches",
+      "expected_predictive_batches",
+      "unseen7_predictive_panel_statuses"
+    ],
+    "note": "These inherited fields describe the six added algorithms only. Explicit all_eight fields cover CPO/PPO-Lag too."
+  },
+  "snapshot_utc": "2026-10-08T12:08:31.720550+00:00",
+  "source_runtime_note": "Historical CPO/PPO-Lag, five original added algorithms and repaired PCPO retain distinct runtime provenance.",
+  "unseen7_predictive_panel_statuses": {
+    "complete": 189,
+    "no_eligible_penalty": 27
+  },
+  "weighting": "equal resets/patients/three predictor seeds within policy/three policy seeds"
+}

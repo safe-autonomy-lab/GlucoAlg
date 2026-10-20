@@ -5,6 +5,17 @@ hyperparameter optimization for [GlucoSim](https://github.com/safe-autonomy-lab/
 The repository includes modified OmniSafe algorithms with categorical actors,
 FunctionEncoder/BA-NODE dynamics predictors, and optional evaluation shields.
 
+## Released evaluation results
+
+The [October 8 comparison](benchmark-results/2026-10-08/README.md) provides
+downloadable no-shield, static-shield and predictive-shield results for all
+eight algorithms, three diabetes configurations and three age cohorts, with
+three policy training seeds and separate deterministic/stochastic modes.
+It includes unseen patients #002–#010 over seven requested days, explicit
+scientific NA outcomes, safety/coverage metrics, and links to compressed
+per-episode metrics on Hugging Face. Reading these results requires no simulator
+or retraining.
+
 ## Installation
 
 Python 3.10 or newer is required. Install GlucoSim first, then this repository
