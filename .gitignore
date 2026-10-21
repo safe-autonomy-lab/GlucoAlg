@@ -198,3 +198,7 @@ __pycache__/
 
 # Published, frozen benchmark summaries (raw experiment outputs stay ignored).
 !/benchmark-results/2026-10-08/tables/*.csv
+
+# Small outcome summaries for the two released trajectory illustrations.
+!/benchmark-results/2026-10-08/illustrations/patients009-010/patient009.metrics.csv
+!/benchmark-results/2026-10-08/illustrations/patients009-010/patient010.metrics.csv

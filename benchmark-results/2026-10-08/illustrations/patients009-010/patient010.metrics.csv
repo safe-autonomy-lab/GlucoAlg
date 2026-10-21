@@ -1,0 +1,4 @@
+condition,transitions,coverage_percent,tir_percent,below54_percent,terminated,truncated
+none,2016,100.0,57.837301587301596,14.930555555555555,False,True
+static,2016,100.0,63.34325396825397,4.315476190476191,False,True
+predictive,2016,100.0,89.93055555555556,1.3392857142857142,False,True

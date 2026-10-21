@@ -16,6 +16,10 @@ scientific NA outcomes, safety/coverage metrics, and links to compressed
 per-episode metrics on Hugging Face. Reading these results requires no simulator
 or retraining.
 
+The [patient #009/#010 plotting example](benchmark-results/2026-10-08/illustrations/patients009-010/README.md)
+provides six matched seven-day PPO-Lag trajectories, CSVs and local plot/animation
+code for T2D no-pump adolescents with a visible predictive-shield improvement.
+
 ## Installation
 
 Python 3.10 or newer is required. Install GlucoSim first, then this repository

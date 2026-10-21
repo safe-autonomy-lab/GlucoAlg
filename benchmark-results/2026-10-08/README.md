@@ -119,3 +119,11 @@ benefit for every configuration.
 
 The result data in this folder is [MIT licensed](LICENSE). This does not change
 the source-code license or the licenses of vendored dependencies.
+
+## Selected trajectory examples
+
+The [patients #009/#010 illustration](illustrations/patients009-010/README.md)
+provides a small download with six matched seven-day PPO-Lag recordings for
+T2D no-pump adolescents, ready-to-plot CSVs and plotting/animation code. These
+examples were selected for visible shield benefits and are separate from the
+aggregate comparison tables.
